@@ -1,7 +1,9 @@
 import CopyPlugin from "copy-webpack-plugin";
+import CssMinimizerPlugin from "css-minimizer-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import { join, resolve } from "path";
+import TerserPlugin from "terser-webpack-plugin";
 import Webpack from "webpack";
 
 const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
@@ -13,6 +15,7 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
     compress: true,
     port: 9000,
   },
+  devtool: "source-map",
   entry: {
     index: "./src/index.mts",
     login: "./src/login.mts",
@@ -205,6 +208,17 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
       chunkFilename: "styles/[name].[hash:6].chunk.css",
     }),
   ],
+  optimization: {
+    minimize: true,
+    minimizer: [
+      new TerserPlugin({
+        parallel: 4,
+      }),
+      new CssMinimizerPlugin({
+        parallel: 4,
+      }),
+    ],
+  },
 };
 
 export default config;
