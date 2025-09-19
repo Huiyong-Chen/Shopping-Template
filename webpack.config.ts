@@ -44,6 +44,7 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
     wuliu: "./src/wuliu.mts",
   },
   output: {
+    clean: true,
     path: resolve(import.meta.dirname, "dist"),
     filename: "js/[name].[hash:6].js",
   },
