@@ -5,8 +5,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "build": "webpack build",
-    "translation": "ts-node scripts/translation.mts"
+    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" webpack build",
+    "translation": "node --loader ts-node/esm scripts/translation.mts"
   },
   "keywords": [],
   "author": "",
