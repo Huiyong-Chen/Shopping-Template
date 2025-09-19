@@ -1,7 +1,8 @@
+import CopyPlugin from "copy-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import { join, resolve } from "path";
 import Webpack from "webpack";
-import CopyPlugin from "copy-webpack-plugin";
 
 const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
   mode: "development",
@@ -45,7 +46,7 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
   },
   module: {
     rules: [
-      { test: /.css$/i, use: ["style-loader", "css-loader"] },
+      { test: /.css$/i, use: [MiniCssExtractPlugin.loader, "css-loader"] },
       {
         test: /.(jpg|png|jpeg|gif|svg)$/i,
         type: "asset/resource",
@@ -198,6 +199,10 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
           to: resolve(import.meta.dirname, "./dist/assets/images"),
         },
       ],
+    }),
+    new MiniCssExtractPlugin({
+      filename: "styles/[name].[hash:6].css",
+      chunkFilename: "styles/[name].[hash:6].chunk.css",
     }),
   ],
 };

@@ -231,76 +231,81 @@ function generateJS(
 }
 
 function generateWebpackConfig(entries: string[]) {
-  return `import HtmlWebpackPlugin from "html-webpack-plugin";
+  return `import CopyPlugin from "copy-webpack-plugin";
+import HtmlWebpackPlugin from "html-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import { join, resolve } from "path";
 import Webpack from "webpack";
-import CopyPlugin from "copy-webpack-plugin";
     
-    const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
-      mode: "development",
-      devServer: {
-        static: {
-          directory: join(import.meta.dirname, "dist"),
-        },
-        compress: true,
-        port: 9000,
-      },
-      entry: {
-        ${entries
-          .map((entry) => {
-            const name = entry.slice(0, -5);
-            return `${name}: "./src/${name}.mts"`;
-          })
-          .join(",\n")}
-      },
-      output: {
-        path: resolve(import.meta.dirname, "dist"),
-        filename: "js/[name].[hash:6].js",
-      },
-      module: {
-        rules: [
-          { test: /\.css$/i, use: ["style-loader", "css-loader"] },
-          {
-            test: /\.(jpg|png|jpeg|gif|svg)$/i,
-            type: "asset/resource",
-            parser: {
-              dataUrlCondition: {
-                maxSize: 4 * 1024,
-              },
-            },
-            generator: {
-              filename: "assets/images/[name].[hash:6][ext]",
-            },
+const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
+  mode: "development",
+  devServer: {
+    static: {
+      directory: join(import.meta.dirname, "dist"),
+    },
+    compress: true,
+    port: 9000,
+  },
+  entry: {
+    ${entries
+      .map((entry) => {
+        const name = entry.slice(0, -5);
+        return `${name}: "./src/${name}.mts"`;
+      })
+      .join(",\n\t\t")}
+  },
+  output: {
+    path: resolve(import.meta.dirname, "dist"),
+    filename: "js/[name].[hash:6].js",
+  },
+  module: {
+    rules: [
+      { test: /\.css$/i, use: [MiniCssExtractPlugin.loader, "css-loader"] },
+      {
+        test: /\.(jpg|png|jpeg|gif|svg)$/i,
+        type: "asset/resource",
+        parser: {
+          dataUrlCondition: {
+            maxSize: 4 * 1024,
           },
-          { test: /\.([cm]?ts)$/i, loader: "ts-loader" },
-        ],
+        },
+        generator: {
+          filename: "assets/images/[name].[hash:6][ext]",
+        },
       },
-      plugins: [
-      ${entries
-        .map(
-          (entry) => `new HtmlWebpackPlugin({
-          filename: "${entry}",
-          template: "./src/${entry}",
-          chunks: ['${entry.slice(0, -5)}']
-        })`
-        )
-        .join(",\n")},
-        new Webpack.ProvidePlugin({
-          $: "jquery",
-          jQuery: "jquery",
-        }),
-        new CopyPlugin({
-          patterns: [
-            {
-              from: resolve(import.meta.dirname, "./src/img"),
-              to: resolve(import.meta.dirname, "./dist/assets/images"),
-            },
-          ],
-        }),
+      { test: /\.([cm]?ts)$/i, loader: "ts-loader" },
+    ],
+  },
+  plugins: [
+  ${entries
+    .map(
+      (entry) => `\tnew HtmlWebpackPlugin({
+      filename: "${entry}",
+      template: "./src/${entry}",
+      chunks: ["${entry.slice(0, -5)}"],
+    })`
+    )
+    .join(",\n\t")},
+    new Webpack.ProvidePlugin({
+      $: "jquery",
+      jQuery: "jquery",
+    }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from: resolve(import.meta.dirname, "./src/img"),
+          to: resolve(import.meta.dirname, "./dist/assets/images"),
+        },
       ],
-    };
-    
-    export default config;
+    }),
+    new MiniCssExtractPlugin({
+      filename: "styles/[name].[hash:6].css",
+      chunkFilename: "styles/[name].[hash:6].chunk.css",
+    }),
+  ],
+};
+
+export default config;
     `;
 }
 
