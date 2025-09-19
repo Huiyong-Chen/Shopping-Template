@@ -5,153 +5,236 @@ const htmlDir = resolve(import.meta.dirname, "../src/source-htmls");
 const targetHtmlDir = resolve(import.meta.dirname, "../src");
 const indexPath = resolve(import.meta.dirname, "../src/index.mts");
 
-const htmlMatch = /<a\b[^>]*?\shref=(["'])(.*?)\1[\s\S]*?>/i;
-const cssLinkMatch = /<link\s+[^>]*?rel=["']stylesheet["'][^>]*?>/gi;
-const cssHrefMatch = /href=(["'])(.*?)\1/i;
-const scriptMatch = /<script\b[^>]*>[\s\S]*?<\/script>/gi;
-const scriptSrcMatch = /src=(["'])(.*?)\1/i;
-const imgMatch = /<img\s+[^>]*?src=(["'])(.*?)\1[^>]*?>/gi;
+const aHrefMatch = /<a\s+[^>]*href=(["'])(.*?)\1[^>]*>[\s\S]*?<\/a>/gi;
+const cssLinkMatch =
+  /<link\b(?=[^>]*\brel=(["'])stylesheet\1)(?=[^>]*\bhref=(["'])(.*?)\2)[^>]*\/?>/gi;
+const cssLinkHrefMatch = /\bhref=(["'])(.*?)\1/i;
+
+const scriptMatch = /<script\b([^>]*)>([\s\S]*?)<\/script>/gi;
+const scriptExternalMatch = /\bsrc=(["'])(.*?)\1/i;
 
 // 读取文件内容并更改相关内容
 function readAllHtmlPaths(
   path: string,
-  filePaths: {
-    htmlPaths: {
-      [path: string]: string;
+  filesInfo: {
+    [path: string]: {
+      content: string;
+      cssUrlList: string[];
+      jsSrcList: string[];
+      jsContentList: string[];
     };
-    cssPaths: string[];
-    jsPaths: string[];
-    jsContent: string[];
-  } = {
-    htmlPaths: {},
-    cssPaths: [],
-    jsPaths: [],
-    jsContent: [],
-  }
+  } = {}
 ) {
-  const htmlPath = resolve(htmlDir, path);
-  const fileContent = readFileSync(htmlPath, { encoding: "utf-8" });
-  const fileLines = fileContent.split("\n");
-
-  let newContent = "";
-  for (const line of fileLines) {
-    let newLine = line;
-    // 提取a链接href
-    const aHrefMatch = line.match(htmlMatch);
-    if (aHrefMatch) {
-      const htmlRef = aHrefMatch[2].trim() as string;
-      if (htmlRef.endsWith(".html") && !(htmlRef in filePaths.htmlPaths)) {
-        filePaths.htmlPaths[htmlRef] = "";
-        readAllHtmlPaths(htmlRef, filePaths);
-      }
-    }
-    // 替换图片路径
-    if (line.match(imgMatch)) {
-      newLine = line.replace(imgMatch, (match, quote, src) => {
-        const newSrc = `../src/${src}`;
-        return match.replace(src, newSrc);
-      });
-    }
-    // 是否是css link，如果是的话，则提取出来
-    newLine = translationContent(
-      newLine,
-      cssLinkMatch,
-      (link) => {
-        const linkSrc = link.match(cssHrefMatch);
-        if (linkSrc && !filePaths.cssPaths.includes(linkSrc[2])) {
-          filePaths.cssPaths.push(linkSrc[2]);
-        }
-      },
-      ""
-    );
-
-    // 是否是script，如果是的话，则提取出来
-    newLine = translationContent(
-      newLine,
-      scriptMatch,
-      (script) => {
-        const scriptSrc = script.match(scriptSrcMatch);
-        if (scriptSrc && !filePaths.jsPaths.includes(scriptSrc[2])) {
-          filePaths.jsPaths.push(scriptSrc[2]);
-        }
-      },
-      ""
-    );
-    newContent += newLine + "\n";
+  if (filesInfo[path] === undefined) {
+    filesInfo[path] = {
+      content: "",
+      cssUrlList: [],
+      jsSrcList: [],
+      jsContentList: [],
+    };
   }
 
-  // 是否是内联script，如果是的话，则提取出来
-  newContent = translationContent(
-    newContent,
-    scriptMatch,
-    (script) => {
-      const srcMatch = script.match(scriptSrcMatch);
-      if (!srcMatch) {
-        // 内联脚本，提取内容
-        const contentMatch = script.match(/<script[^>]*>([\s\S]*?)<\/script>/i);
-        const scriptContent = contentMatch ? contentMatch[1].trim() : "";
-        if (scriptContent) {
-          filePaths.jsContent.push(scriptContent);
-        }
+  const htmlPath = resolve(htmlDir, path);
+  let fileContent = readFileSync(htmlPath, { encoding: "utf-8" });
+
+  // 提取a标签的href
+  const aHrefList = extractContent(fileContent, aHrefMatch).extract.filter(
+    (href) => href.endsWith(".html")
+  );
+  if (aHrefList.length) {
+    for (const htmlHref of aHrefList) {
+      if (filesInfo[htmlHref] === undefined) {
+        readAllHtmlPaths(htmlHref, filesInfo);
       }
-    },
+    }
+  }
+  // 提取css link
+  const { content: afterCssNewContent, extract: cssUrlList } = extractContent(
+    fileContent,
+    cssLinkMatch,
+    cssLinkHrefMatch,
     ""
   );
-  filePaths.htmlPaths[path] = newContent;
+  fileContent = afterCssNewContent;
+  // 提取js（包括内联js）
+  const {
+    content: afterJSNewContent,
+    jsSrcList,
+    jsContentList,
+  } = extractScriptContent(fileContent, scriptMatch, scriptExternalMatch, "");
+  fileContent = afterJSNewContent;
 
-  return filePaths;
+  // 处理图片路径
+  fileContent = fixImgSrc(fileContent, "src");
+
+  filesInfo[path] = {
+    content: fileContent,
+    cssUrlList,
+    jsSrcList,
+    jsContentList,
+  };
+
+  return filesInfo;
 }
 
-// 转换内容
-function translationContent(
+/**
+ * 提取内容
+ * @param content 内容
+ * @param regex 匹配 正则
+ * @param extractRegex 提取正则
+ * @returns
+ */
+function extractContent(
   content: string,
-  re: RegExp,
-  matchCallback: (matchContent: string) => void,
-  replace?: string
+  regex: RegExp,
+  extractRegex?: RegExp,
+  replaceText?: string
 ) {
-  const matchs = content.match(re) ?? [];
-  if (matchs.length) {
-    matchs.forEach(matchCallback);
-    if (replace !== undefined && replace !== null) {
-      content = content.replace(re, "");
+  const results: string[] = [];
+
+  if (extractRegex === undefined || extractRegex === null) {
+    let match: RegExpExecArray;
+
+    while ((match = regex.exec(content)) !== null) {
+      results.push(match[2]);
     }
+  } else {
+    content = content.replace(regex, (matchContent) => {
+      const hrefMatch = matchContent.match(extractRegex);
+      if (hrefMatch) {
+        results.push(hrefMatch[2]);
+      }
+      return replaceText ?? matchContent;
+    });
   }
+
+  return {
+    content,
+    extract: results,
+  };
+}
+
+/**
+ * 提取内容
+ * @param content 内容
+ * @param regex 匹配 正则
+ * @param extractRegex 提取正则
+ * @returns
+ */
+function extractScriptContent(
+  content: string,
+  regex: RegExp,
+  extractRegex?: RegExp,
+  replaceText?: string
+) {
+  const jsSrcList: string[] = [];
+  const jsContentList: string[] = [];
+
+  // replace 方法同时提取并移除
+  content = content.replace(regex, (matchText, attrText, innerContent) => {
+    const srcMatch = attrText.match(extractRegex);
+    if (srcMatch) {
+      // 外部 JS
+      jsSrcList.push(srcMatch[2]);
+    } else {
+      // 内联 JS
+      const code = innerContent.trim();
+      if (code) {
+        jsContentList.push(code);
+      }
+    }
+    return replaceText ?? matchText;
+  });
+
+  return {
+    content,
+    jsSrcList,
+    jsContentList,
+  };
+}
+
+function fixImgSrc(content: string, targetDir: string) {
+  // 匹配 img 标签的 src 属性
+  const regex = /<img\b([^>]*)>/gi;
+
+  content = content.replace(regex, (_, attrText) => {
+    // 提取 src
+    const srcMatch = attrText.match(/\bsrc=(["'])(.*?)\1/i);
+    const dataSrcMatch = attrText.match(/\bdata-src=(["'])(.*?)\1/i);
+
+    let newAttrText = attrText;
+
+    // 处理 src
+    if (srcMatch) {
+      let src = srcMatch[2];
+      if (src.startsWith(`${targetDir}/`)) {
+        src = `../${src}`;
+      } else {
+        src = `../${targetDir}/${src}`;
+      }
+      newAttrText = newAttrText.replace(
+        srcMatch[0],
+        `src=${srcMatch[1]}${src}${srcMatch[1]}`
+      );
+    }
+
+    // 处理 data-src
+    if (dataSrcMatch) {
+      let dataSrc = dataSrcMatch[2];
+      if (dataSrc.startsWith(`${targetDir}/`)) {
+        dataSrc = `../${dataSrc}`;
+      } else {
+        dataSrc = `../${targetDir}/${dataSrc}`;
+      }
+      newAttrText = newAttrText.replace(
+        dataSrcMatch[0],
+        `data-src=${dataSrcMatch[1]}${dataSrc}${dataSrcMatch[1]}`
+      );
+    }
+
+    return `<img${newAttrText}>`;
+  });
+
   return content;
 }
 
-function saveContent(path, content) {
+// 保存
+function saveContent(path: string, content: string) {
   writeFileSync(path, content);
 }
 
-function generateIndex(paths: {
-  cssPaths: string[];
-  jsPaths: string[];
-  jsContent: string[];
-}) {
+function generateJS(
+  cssUrlList: string[],
+  jsSrcList: string[],
+  jsContentList: string[]
+) {
   // **注意** super-slide不规范 package，没有导出
-  let content = `import "jquery";
-import "super-slide/jquery.SuperSlide.2.1.3.js";
-import "flexslider";
-  `;
+  let content = "";
 
-  for (const jsPath of paths.jsPaths) {
-    if (!jsPath.includes("jquery") && !jsPath.includes("flexslider")) {
+  for (const jsPath of jsSrcList) {
+    if (/(?:.*\/)?jquery-([\d.]+)(?:\.min)?\.js$/i.test(jsPath)) {
+      content += `import "jquery";\n`;
+    } else if (/(?:.*\/)?jquery\.flexslider(?:-min)?\.js$/i.test(jsPath)) {
+      content += `import "flexslider";\n`;
+    } else if (/(?:.*\/)?jquery\.SuperSlide\.([\d.]+)\.js$/i.test(jsPath)) {
+      content += `import "super-slide/jquery.SuperSlide.2.1.3.js";\n`;
+    } else {
       content += `import './${jsPath}';` + "\n";
     }
   }
   content += "\n\n";
-  for (const cssPath of paths.cssPaths) {
+  for (const cssPath of cssUrlList) {
     content += `import './${cssPath}';` + "\n";
   }
 
   content += "\n\n";
-  for (const jsContent of paths.jsContent) {
+  for (const jsContent of jsContentList) {
     content += jsContent + "\n";
   }
   return content;
 }
 
-function generateWebpackConfig(htmls: string[]) {
+function generateWebpackConfig(entries: string[]) {
   return `import HtmlWebpackPlugin from "html-webpack-plugin";
     import { resolve } from "path";
     import Webpack from "webpack";
@@ -161,7 +244,12 @@ function generateWebpackConfig(htmls: string[]) {
     const config: Webpack.Configuration = {
       mode: "development",
       entry: {
-        bundle: "./src/index.mts",
+        ${entries
+          .map((entry) => {
+            const name = entry.slice(0, -5);
+            return `${name}: "./src/${name}.mts"`;
+          })
+          .join(",\n")}
       },
       output: {
         path: resolve(import.meta.dirname, "dist"),
@@ -186,11 +274,12 @@ function generateWebpackConfig(htmls: string[]) {
         ],
       },
       plugins: [
-      ${htmls
+      ${entries
         .map(
-          (htmlName) => `new HtmlWebpackPlugin({
-          filename: "${htmlName}",
-          template: "./src/${htmlName}",
+          (entry) => `new HtmlWebpackPlugin({
+          filename: "${entry}",
+          template: "./src/${entry}",
+          chunks: ['${entry.slice(0, -5)}']
         })`
         )
         .join(",\n")},
@@ -206,18 +295,22 @@ function generateWebpackConfig(htmls: string[]) {
 }
 
 (() => {
-  const paths = readAllHtmlPaths("index.html");
-  console.log(Object.keys(paths.htmlPaths));
+  const pathsInfo = readAllHtmlPaths("index.html");
 
-  //   拷贝并更新html
-  for (const htmlPath in paths.htmlPaths) {
-    saveContent(resolve(targetHtmlDir, htmlPath), paths.htmlPaths[htmlPath]);
+  for (const path in pathsInfo) {
+    const { content, cssUrlList, jsSrcList, jsContentList } = pathsInfo[path];
+    console.log(path, cssUrlList, jsSrcList, jsContentList);
+    // 生成html
+    saveContent(resolve(targetHtmlDir, path), content);
+    // 生成js
+    saveContent(
+      resolve(targetHtmlDir, `${path.slice(0, -4)}mts`),
+      generateJS(cssUrlList, jsSrcList, jsContentList)
+    );
   }
-  // 添加入index.mts
-  saveContent(indexPath, generateIndex(paths));
-  // 更新webpack config
+  // 更新webpack配置
   saveContent(
     resolve(import.meta.dirname, "../webpack.config.ts"),
-    generateWebpackConfig(Object.keys(paths.htmlPaths))
+    generateWebpackConfig(Object.keys(pathsInfo))
   );
 })();
