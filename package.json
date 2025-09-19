@@ -5,6 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
+    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" webpack serve --mode=development",
     "build": "NODE_OPTIONS=\"--loader ts-node/esm\" webpack build",
     "translation": "node --loader ts-node/esm scripts/translation.mts"
   },
@@ -16,6 +17,7 @@
     "@types/flexslider": "^2.7.4",
     "@types/jquery": "^3.5.33",
     "@types/node": "^24.5.2",
+    "copy-webpack-plugin": "^13.0.1",
     "css-loader": "^7.1.2",
     "html-webpack-plugin": "^5.6.4",
     "style-loader": "^4.0.0",
@@ -24,7 +26,8 @@
     "typescript": "^5.9.2",
     "webpack": "^5.101.3",
     "webpack-bundle-analyzer": "^4.10.2",
-    "webpack-cli": "^6.0.1"
+    "webpack-cli": "^6.0.1",
+    "webpack-dev-server": "^5.2.2"
   },
   "dependencies": {
     "flexslider": "^2.7.2",

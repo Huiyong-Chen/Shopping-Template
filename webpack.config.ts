@@ -1,9 +1,17 @@
 import HtmlWebpackPlugin from "html-webpack-plugin";
-import { resolve } from "path";
+import { join, resolve } from "path";
 import Webpack from "webpack";
+import CopyPlugin from "copy-webpack-plugin";
 
-const config: Webpack.Configuration = {
+const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
   mode: "development",
+  devServer: {
+    static: {
+      directory: join(import.meta.dirname, "dist"),
+    },
+    compress: true,
+    port: 9000,
+  },
   entry: {
     index: "./src/index.mts",
     login: "./src/login.mts",
@@ -182,6 +190,14 @@ const config: Webpack.Configuration = {
     new Webpack.ProvidePlugin({
       $: "jquery",
       jQuery: "jquery",
+    }),
+    new CopyPlugin({
+      patterns: [
+        {
+          from: resolve(import.meta.dirname, "./src/img"),
+          to: resolve(import.meta.dirname, "./dist/assets/images"),
+        },
+      ],
     }),
   ],
 };

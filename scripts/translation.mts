@@ -167,10 +167,8 @@ function fixImgSrc(content: string, targetDir: string) {
     // 处理 src
     if (srcMatch) {
       let src = srcMatch[2];
-      if (src.startsWith(`${targetDir}/`)) {
-        src = `../${src}`;
-      } else {
-        src = `../${targetDir}/${src}`;
+      if (!src.startsWith("assets/images/")) {
+        src = `assets/images/${src.replace(/^\.?\/?img\//, "")}`;
       }
       newAttrText = newAttrText.replace(
         srcMatch[0],
@@ -181,10 +179,8 @@ function fixImgSrc(content: string, targetDir: string) {
     // 处理 data-src
     if (dataSrcMatch) {
       let dataSrc = dataSrcMatch[2];
-      if (dataSrc.startsWith(`${targetDir}/`)) {
-        dataSrc = `../${dataSrc}`;
-      } else {
-        dataSrc = `../${targetDir}/${dataSrc}`;
+      if (dataSrc.startsWith("assets/images/")) {
+        dataSrc = `assets/images/${dataSrc.replace(/^\.?\/?img\//, "")}`;
       }
       newAttrText = newAttrText.replace(
         dataSrcMatch[0],
@@ -236,13 +232,19 @@ function generateJS(
 
 function generateWebpackConfig(entries: string[]) {
   return `import HtmlWebpackPlugin from "html-webpack-plugin";
-    import { resolve } from "path";
-    import Webpack from "webpack";
+import { join, resolve } from "path";
+import Webpack from "webpack";
+import CopyPlugin from "copy-webpack-plugin";
     
-    console.log(import.meta);
-    
-    const config: Webpack.Configuration = {
+    const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
       mode: "development",
+      devServer: {
+        static: {
+          directory: join(import.meta.dirname, "dist"),
+        },
+        compress: true,
+        port: 9000,
+      },
       entry: {
         ${entries
           .map((entry) => {
@@ -286,6 +288,14 @@ function generateWebpackConfig(entries: string[]) {
         new Webpack.ProvidePlugin({
           $: "jquery",
           jQuery: "jquery",
+        }),
+        new CopyPlugin({
+          patterns: [
+            {
+              from: resolve(import.meta.dirname, "./src/img"),
+              to: resolve(import.meta.dirname, "./dist/assets/images"),
+            },
+          ],
         }),
       ],
     };
