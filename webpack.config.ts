@@ -218,6 +218,23 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
         parallel: 4,
       }),
     ],
+    splitChunks: {
+      chunks: "all",
+      minSize: 30 * 1024,
+      name: "common",
+      cacheGroups: {
+        jquery: {
+          name: "jquery",
+          test: /jquery/,
+          chunks: "all",
+        },
+        "lodash-es": {
+          name: "lodash-es",
+          test: /lodash-es/,
+          chunks: "all",
+        },
+      },
+    },
   },
 };
 
