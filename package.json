@@ -5,9 +5,9 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "NODE_OPTIONS=\"--loader ts-node/esm\" webpack serve --mode=development",
-    "build": "NODE_OPTIONS=\"--loader ts-node/esm\" webpack build",
-    "translation": "node --loader ts-node/esm scripts/translation.mts"
+    "native:dev": "NODE_OPTIONS=\"--loader ts-node/esm\" webpack serve --mode=development --config webpack-configs/webpack.native.config.ts",
+    "native:build": "NODE_OPTIONS=\"--loader ts-node/esm\" webpack build --config webpack-configs/webpack.native.config.ts",
+    "native:translation": "node --loader ts-node/esm scripts/native-translation.mts"
   },
   "keywords": [],
   "author": "",

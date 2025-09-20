@@ -1,6 +1,6 @@
 declare module "*.css";
 declare module "*.js";
-declare interface JQuery {
+declare interface JQuery<TElement = HTMLElement, T = HTMLElement> {
   slide(options?: {
     type?: string;
     effect?: string;
