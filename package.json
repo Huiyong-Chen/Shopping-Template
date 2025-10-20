@@ -7,7 +7,8 @@
   "scripts": {
     "native:dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack serve --mode=development --config webpack-configs/webpack.native.config.ts",
     "native:build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack build --config webpack-configs/webpack.native.config.ts",
-    "native:translation": "node --loader ts-node/esm scripts/native-translation.mts"
+    "native:translation": "node --loader ts-node/esm scripts/native-translation.mts",
+    "vue:dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack serve --mode=development --config webpack-configs/webpack.vue.config.ts"
   },
   "keywords": [],
   "author": "",
@@ -28,6 +29,7 @@
     "ts-loader": "^9.5.4",
     "ts-node": "^10.9.2",
     "typescript": "^5.9.2",
+    "vue-loader": "^15.11.1",
     "webpack": "^5.101.3",
     "webpack-bundle-analyzer": "^4.10.2",
     "webpack-cli": "^6.0.1",
@@ -37,6 +39,7 @@
     "flexslider": "^2.7.2",
     "jquery": "^3.7.1",
     "lodash-es": "^4.17.21",
-    "super-slide": "^2.1.4"
+    "super-slide": "^2.1.4",
+    "vue": "^2.7.16"
   }
 }
