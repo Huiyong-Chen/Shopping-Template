@@ -1,13 +1,10 @@
 <template>
-  <div id="app">{{ message }}</div>
+  <router-view />
 </template>
 <script>
+import Home from "./Home.vue";
 export default {
-  data() {
-    return {
-      message: "123",
-    };
-  },
+  components: { Home },
 };
 </script>
 <style></style>
