@@ -11,7 +11,7 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
   mode: "development",
   devServer: {
     static: {
-      directory: join(import.meta.dirname, "../dist/vue"),
+      directory: join(import.meta.dirname, "../dist/vue-mpa"),
     },
     compress: true,
     port: 9000,
@@ -49,12 +49,12 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
   },
   plugins: [
     new HtmlWebpackPlugin({
-      filename: "Home.html",
+      filename: "home.html",
       template: "./public/index.html",
       chunks: ["home"],
     }),
     new HtmlWebpackPlugin({
-      filename: "Login.html",
+      filename: "login.html",
       template: "./public/index.html",
       chunks: ["login"],
     }),
