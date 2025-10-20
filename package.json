@@ -9,7 +9,9 @@
     "native:build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack build --config webpack-configs/webpack.native.config.ts",
     "native:translation": "node --loader ts-node/esm scripts/native-translation.mts",
     "vue:dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack serve --mode=development --config webpack-configs/webpack.vue.config.ts",
-    "vue:build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack build --config webpack-configs/webpack.vue.config.ts"
+    "vue:build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack build --config webpack-configs/webpack.vue.config.ts",
+    "vue-mpa:dev": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack serve --mode=development --config webpack-configs/webpack.vue-mpa.config.ts",
+    "vue-mpa:build": "cross-env NODE_OPTIONS=\"--loader ts-node/esm\" webpack build --config webpack-configs/webpack.vue-mpa.config.ts"
   },
   "keywords": [],
   "author": "",
