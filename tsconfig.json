@@ -6,7 +6,10 @@
     "esModuleInterop": true,
     "allowArbitraryExtensions": true,
     "skipLibCheck": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "strict": true,
+    "noEmit": true,
+    "allowImportingTsExtensions": true
   },
   "include": ["src", "scripts", "webpack-configs"]
 }

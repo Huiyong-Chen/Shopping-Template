@@ -1,5 +1,6 @@
 import CopyPlugin from "copy-webpack-plugin";
 import CssMinimizerPlugin from "css-minimizer-webpack-plugin";
+import ForkTsCheckerWebpackPlugin from "fork-ts-checker-webpack-plugin";
 import HtmlWebpackPlugin from "html-webpack-plugin";
 import MiniCssExtractPlugin from "mini-css-extract-plugin";
 import { join, resolve } from "path";
@@ -13,12 +14,13 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
     static: {
       directory: join(import.meta.dirname, "../dist/vue"),
     },
+    historyApiFallback: true, // 让开发服务器在访问未知路径时返回 index.html
     compress: true,
     port: 9000,
   },
   devtool: "source-map",
   entry: {
-    index: resolve(import.meta.dirname, "../src/vue/main.js"),
+    index: resolve(import.meta.dirname, "../src/vue/main.mts"),
   },
   output: {
     clean: true,
@@ -39,6 +41,15 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
         generator: {
           filename: "assets/images/[name].[hash:6][ext]",
         },
+      },
+      {
+        test: /\.([cm])?ts$/i,
+        loader: "ts-loader",
+        options: {
+          transpileOnly: true, // ✅ 不执行类型检查，只编译 JS
+          appendTsSuffixTo: [/\.vue$/], // ✅ 让 .vue 文件的 <script lang="ts"> 能被识别
+        },
+        exclude: /node_modules/,
       },
       {
         test: /\.vue$/i,
@@ -68,7 +79,15 @@ const config: Webpack.Configuration | Webpack.WebpackOptionsNormalized = {
       filename: "styles/[name].[hash:6].css",
       chunkFilename: "styles/[name].[hash:6].chunk.css",
     }),
-    new VueLoaderPlugin() as any,
+    new VueLoaderPlugin(),
+    new ForkTsCheckerWebpackPlugin({
+      typescript: {
+        diagnosticOptions: {
+          semantic: true,
+          syntactic: true,
+        },
+      },
+    }),
   ],
   optimization: {
     minimize: true,

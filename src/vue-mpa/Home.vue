@@ -428,20 +428,18 @@
     </div>
   </div>
 </template>
-<script>
-import "jquery";
-import "./js/public.js";
-import "./js/nav.js";
+<script setup>
 import "flexslider";
+import "jquery";
+import "./js/nav.js";
+import "./js/public.js";
 
-import "./css/public.css";
 import "./css/index.css";
-export default {
-  methods: {
-    routeToLogin() {
-      this.$router.push("/login");
-    },
-  },
-};
+import "./css/public.css";
 </script>
-<style></style>
+<style>
+#app {
+  width: 100%;
+  height: 100%;
+}
+</style>

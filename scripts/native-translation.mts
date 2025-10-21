@@ -93,7 +93,7 @@ function extractContent(
   const results: string[] = [];
 
   if (extractRegex === undefined || extractRegex === null) {
-    let match: RegExpExecArray;
+    let match: RegExpExecArray | null;
 
     while ((match = regex.exec(content)) !== null) {
       results.push(match[2]);

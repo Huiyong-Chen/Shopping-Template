@@ -428,20 +428,19 @@
     </div>
   </div>
 </template>
-<script>
-import "jquery";
-import "./js/public.js";
-import "./js/nav.js";
+<script setup>
 import "flexslider";
-
-import "./css/public.css";
+import "jquery";
+import { useRouter } from "vue-router";
 import "./css/index.css";
-export default {
-  methods: {
-    routeToLogin() {
-      this.$router.push("/login");
-    },
-  },
+import "./css/public.css";
+import "./js/nav.js";
+import "./js/public.js";
+
+const router = useRouter();
+
+const routeToLogin = () => {
+  router.push("/login");
 };
 </script>
 <style></style>

@@ -20,10 +20,8 @@
     </form>
   </div>
 </template>
-<script>
+<script setup>
 import "./css/public.css";
 import "./css/login.css";
-
-export default {};
 </script>
 <style></style>
